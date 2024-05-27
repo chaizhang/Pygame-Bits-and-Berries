@@ -9,7 +9,6 @@ class Player:
 
 
 # Bits & Berries TO-DO:
-# 1) Wall generation issues; currently generates walls next to each other if ran out of space
 # 2) Wall and border collision
 # 3) Randomize berry movement
 # 4) Coin and berry counter
@@ -185,13 +184,14 @@ while run:
     TO-DO
     '''
 
-    # NOTE: WALL GENERATION NEEDS TO AVOID EXISTING BERRY !
+    # NOTE: WALL GENERATION NEEDS TO AVOID EXISTING BERRY ! (SOLVED)
+    # NOTE: BERRY GENERATES ON TOP OF COIN !
     # Berry Collision
     if player.rect.colliderect(berry):
         berry.x = (random.randint(1, 15)) * 35  # range 35-560
         berry.y = (random.randint(4, 18)) * 35  # range 140-665
         berry_counter += 1
-        while any(wall.colliderect(berry) for wall in walls) or player.rect.colliderect(berry):
+        while any(wall.colliderect(berry) for wall in walls) or player.rect.colliderect(berry) or coin.colliderect(berry):
             berry.x = (random.randint(1, 15)) * 35
             berry.y = (random.randint(4, 18)) * 35
 
@@ -215,7 +215,8 @@ while run:
         while not valid_position_found and attempts < max_attempts:
             new_wall = generate_new_wall()
             if not any(wall.colliderect(new_wall) for wall in walls) \
-                    and not any(wall.colliderect(coin) for wall in walls) \
+                    and not new_wall.colliderect(coin) \
+                    and not new_wall.colliderect(berry) \
                     and not player.rect.colliderect(new_wall):
                 adjacent_collision = False
                 for dx in [-35, 0, 35]:
