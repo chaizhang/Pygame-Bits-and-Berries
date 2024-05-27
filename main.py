@@ -9,13 +9,13 @@ class Player:
 
 
 # Bits & Berries TO-DO:
-# 1) Wall generation issues
+# 1) Wall generation issues; currently generates walls next to each other if ran out of space
 # 2) Wall and border collision
 # 3) Randomize berry movement
 # 4) Coin and berry counter
 # 5) Health bar
 # 6) Refactor code
-# 7) Make berry generation more rare? (eat 3 coins for 1 berry)
+# 7) Make berry generation more rare? (e.g. eat 3 coins for 1 berry)
 # 8) Starting screen
 # 9) Start over screen
 
@@ -181,7 +181,11 @@ while run:
         image_counter = 0
 
     # COLLISION
+    '''
+    TO-DO
+    '''
 
+    # NOTE: WALL GENERATION NEEDS TO AVOID EXISTING BERRY !
     # Berry Collision
     if player.rect.colliderect(berry):
         berry.x = (random.randint(1, 15)) * 35  # range 35-560
@@ -198,26 +202,38 @@ while run:
 
     # Coin Collision
     if player.rect.colliderect(coin):
-        # ONLY GENERATE NEW WALLS WHEN THERE IS SPACE?
         # Generate new wall
-        new_wallX = (random.randint(1, 15)) * 35
-        new_wallY = (random.randint(4, 18)) * 35
-        new_wall = pygame.Rect((new_wallX, new_wallY, 35, 35))
+        def generate_new_wall():
+            new_wallX = (random.randint(1, 15)) * 35
+            new_wallY = (random.randint(4, 18)) * 35
+            return pygame.Rect((new_wallX, new_wallY, 35, 35))
 
-        while any(wall.colliderect(new_wall) for wall in walls) \
-                or any(wall.colliderect(coin) for wall in walls) \
-                or player.rect.colliderect(new_wall):
-            new_wall.x = (random.randint(1, 15)) * 35
-            new_wall.y = (random.randint(4, 18)) * 35
+        valid_position_found = False
+        attempts = 0
+        max_attempts = 255
 
-        # FOR LOOP?
-        for i in range(0, 225):
-            if any(new_wall.move(dx, dy).colliderect(wall) for dx in [-35, 0, 35] for dy in [-35, 0, 35] for wall in walls):
-                new_wall.x = (random.randint(1, 15)) * 35
-                new_wall.y = (random.randint(4, 18)) * 35
+        while not valid_position_found and attempts < max_attempts:
+            new_wall = generate_new_wall()
+            if not any(wall.colliderect(new_wall) for wall in walls) \
+                    and not any(wall.colliderect(coin) for wall in walls) \
+                    and not player.rect.colliderect(new_wall):
+                adjacent_collision = False
+                for dx in [-35, 0, 35]:
+                    for dy in [-35, 0, 35]:
+                        if dx == 0 and dy == 0:
+                            continue
+                        if any(new_wall.move(dx, dy).colliderect(wall) for wall in walls):
+                            adjacent_collision = True
+                            break
+                    if adjacent_collision:
+                        break
+                if not adjacent_collision:
+                    valid_position_found = True
+            attempts += 1
 
-        walls.append(new_wall)
-        wall_counter += 1
+            if valid_position_found:
+                walls.append(new_wall)
+                wall_counter += 1
 
         # Generate new coin
         coin.x = (random.randint(1, 15)) * 35  # range 35-560
