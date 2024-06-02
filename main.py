@@ -6,6 +6,7 @@
 # 7) Make berry generation more rare? (e.g. eat 3 coins for 1 berry)
 # 10) Needs to account for players who don't have the 'Berlin Sans FB Demi' font
 # 11) Implement restart mechanics
+# 12) Press SPACE at the beginning of the game moves the player too
 
 
 import pygame
@@ -29,6 +30,18 @@ def resize(graphic, length, width):
     return resized_graphic
 
 
+def generate_new_wall():
+    wallX = (random.randint(1, 15)) * 35  # range 35-560
+    wallY = (random.randint(4, 18)) * 35  # range 140-665
+    return pygame.Rect((wallX, wallY, 35, 35))
+
+
+# GAME WINDOW
+SCREEN_WIDTH = 595  # pixels
+SCREEN_HEIGHT = 700
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Bits and Berries")
+
 # LOAD GRAPHIC
 bg = load_graphic("Blue_Background.png")
 border = load_graphic("Blue_Border.png")
@@ -39,7 +52,10 @@ brick_wall = load_graphic("Red_Brick_Wall.png")
 health = load_graphic("Health.png")
 heart = load_graphic("Red_Heart.png")
 starting_screen = load_graphic("Starting_Screen.png")
+# game_over_screen = load_graphic("Game_Over_Screen.png")
+game_over_graphic = load_graphic("Game_Over_Graphic.png")
 game_over_screen = load_graphic("Game_Over_Screen.png")
+game_over_screen.set_alpha(2)
 # =====
 coin1 = load_graphic("Coin_Frame1.png")
 coin2 = load_graphic("Coin_Frame2.png")
@@ -70,12 +86,6 @@ player_d2 = resize(load_graphic('Player_D2.png'), 35, 35)
 
 pygame.init()
 
-# GAME WINDOW
-SCREEN_WIDTH = 595  # pixels
-SCREEN_HEIGHT = 700
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Bits and Berries")
-
 # PLAYER INITIALIZATION
 player = Player(280, 385, 35, 35, 35)
 player_images = {  # player images for animation
@@ -84,10 +94,6 @@ player_images = {  # player images for animation
     'up': [player_u1, player_u2],
     'down': [player_d1, player_d2]
 }
-
-# WALL
-wallX = (random.randint(1, 15)) * 35  # range 35-560
-wallY = (random.randint(4, 18)) * 35  # range 140-665
 
 # BERRY IMAGES FOR ANIMATION
 berryX = (random.randint(1, 15)) * 35  # range 35-560
@@ -102,9 +108,7 @@ coin_images = [
     coin1, coin2, coin3, coin4, coin5, coin6, coin7, coin8,
     coin9, coin10, coin11, coin12, coin13, coin14, coin15, coin16
 ]
-# coin_images_index = 0
 coin = pygame.Rect((coinX, coinY, 35, 35))
-
 coin_counter_font = pygame.font.SysFont('Berlin Sans FB Demi', 25)
 heart_counter = 3
 
@@ -120,6 +124,8 @@ while intro_screen:
             intro_screen = False
     screen.blit(starting_screen, (0, 0))
     pygame.display.update()
+
+global_coin_counter = 0
 
 
 # MAIN GAME LOOP
@@ -141,9 +147,9 @@ def game_loop():
     wall_counter = 0
     berry_counter = 0
     coin_counter = 0
+    global global_coin_counter
 
     walls = []
-    # wall = pygame.Rect((wallX, wallY, 35, 35))
 
     while not game_over:
         pygame.event.pump()
@@ -216,11 +222,6 @@ def game_loop():
 
         # Coin Collision
         if player.rect.colliderect(coin):
-            # Generate new wall
-            def generate_new_wall():
-                new_wallX = (random.randint(1, 15)) * 35
-                new_wallY = (random.randint(4, 18)) * 35
-                return pygame.Rect((new_wallX, new_wallY, 35, 35))
 
             valid_position_found = False
             attempts = 0
@@ -254,6 +255,7 @@ def game_loop():
             coin.x = (random.randint(1, 15)) * 35  # range 35-560
             coin.y = (random.randint(4, 18)) * 35  # range 140-665
             coin_counter += 1
+            global_coin_counter = coin_counter
             while any(wall.colliderect(coin) for wall in walls) or berry.colliderect(
                     coin) or player.rect.colliderect(coin):
                 coin.x = (random.randint(1, 15)) * 35
@@ -279,13 +281,20 @@ def ending_screen():
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 pygame.quit()
                 sys.exit()
-            if event.key == pygame.K_RETURN:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                 return
 
         screen.blit(game_over_screen, (0, 0))
+        screen.blit(game_over_graphic, (0, 0))
+
+        game_over_font = pygame.font.SysFont('Berlin Sans FB Demi', 35)
+        game_over_coin_count = game_over_font.render(str(global_coin_counter), True, (0, 86, 132))
+        screen.blit(game_over_coin_count, (323.75, 170.625))
+
         pygame.display.update()
 
 
 while True:
     game_loop()
     ending_screen()
+
